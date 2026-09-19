@@ -132,7 +132,10 @@ app.add_middleware(
 app.mount("/comment-uploads", StaticFiles(directory=COMMENT_UPLOADS_DIR), name="comment-uploads")
 
 try:
-    from .ai_assistant import assistant_router
+    try:
+        from .ai_assistant import assistant_router
+    except ImportError:
+        from ai_assistant import assistant_router
     app.include_router(assistant_router)
     logging.info("AI Assistant module loaded")
 except Exception as _ai_err:
