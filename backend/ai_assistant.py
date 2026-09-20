@@ -10,10 +10,18 @@ import os
 
 import requests
 
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+except ImportError:
+    psycopg2 = None
+    RealDictCursor = None
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 DB_PATH = Path(os.getenv('MOSPI_DATABASE_PATH', str(Path(__file__).with_name('paimana.db')))).expanduser()
+DATABASE_URL = os.getenv('DATABASE_URL')
 assistant_router = APIRouter(prefix='/api/v1/assistant', tags=['AI Assistant'])
 logger = logging.getLogger(__name__)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
@@ -22,7 +30,58 @@ GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.6-flash').strip()
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b').strip()
 
 
+class DictRow(dict):
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            values = list(self.values())
+            if 0 <= key < len(values):
+                return values[key]
+            raise IndexError(key)
+        return dict.__getitem__(self, key)
+
+
+class PostgresQueryResult:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        return DictRow(row) if row else None
+
+    def fetchall(self):
+        return [DictRow(row) for row in self.cursor.fetchall()]
+
+
+class PostgresConnection:
+    def __init__(self, dsn: str):
+        if psycopg2 is None:
+            raise RuntimeError('psycopg2-binary is required for PostgreSQL support')
+        self.connection = psycopg2.connect(dsn)
+        self.connection.autocommit = False
+
+    def execute(self, query, params=()):
+        normalized_query = re.sub(r"\?", "%s", query)
+        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(normalized_query, params)
+        return PostgresQueryResult(cursor)
+
+    def commit(self):
+        self.connection.commit()
+
+    def rollback(self):
+        self.connection.rollback()
+
+    def close(self):
+        self.connection.close()
+
+
+def is_postgres_enabled():
+    return bool(DATABASE_URL)
+
+
 def connection():
+    if is_postgres_enabled():
+        return PostgresConnection(DATABASE_URL)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn

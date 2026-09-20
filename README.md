@@ -217,4 +217,30 @@ The generated files are placed in `frontend/dist/`.
 
 ## Data Persistence
 
-The SQLite database persists at `backend/paimana.db`. Projects added through the API remain after a backend restart. The database is ignored by Git so each local installation keeps its own data.
+The app uses SQLite for local development and stores it at `backend/paimana.db` by default. This works for a local machine, but it is not safe for Render or other cloud deployments because the filesystem is usually ephemeral.
+
+### Production deployment note for Render
+
+If you deploy on Render, do not rely on the default local SQLite file. Set a persistent path such as:
+
+```env
+MOSPI_DATABASE_PATH=/data/paimana.db
+```
+
+and mount a persistent volume at `/data` in Render. If you do not mount a persistent volume, data will reset on redeploy or restart.
+
+For a production-grade setup, the best long-term fix is to move from SQLite to a managed PostgreSQL database. SQLite is fine for local testing only.
+
+### Frontend production config
+
+The frontend must point to the deployed backend URL instead of localhost:
+
+```env
+VITE_API_BASE_URL=https://your-render-backend-url.onrender.com
+```
+
+This prevents the app from posting to `http://127.0.0.1:8000`, which only works on your local machine.
+
+flowchart TB
+
+ 
