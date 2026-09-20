@@ -1422,6 +1422,20 @@ def initialize_database() -> None:
                 """
             )
             connection.commit()
+
+            users = [
+                ("Administrator", "admin"),
+                ("Inspector Sharma", "inspector"),
+                ("Inspector Rajesh Patel", "inspector"),
+                ("Operations User", "user"),
+                ("Citizen User", "user"),
+            ]
+            for name, role in users:
+                connection.execute(
+                    "INSERT INTO users (name, role, password_hash) VALUES (?, ?, ?) ON CONFLICT (name, role) DO NOTHING",
+                    (name, role, hash_password("admin")),
+                )
+            connection.commit()
             return
 
         # Migration for affiliation column
