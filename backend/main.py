@@ -1525,120 +1525,121 @@ def initialize_database() -> None:
                 connection.execute("PRAGMA foreign_keys=on;")
                 connection.commit()
 
-        connection.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                role TEXT NOT NULL CHECK (role IN ('admin', 'inspector', 'user')),
-                password_hash TEXT NOT NULL,
-                email TEXT,
-                affiliation TEXT DEFAULT 'Public',
-                must_change_password INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_seen_at TEXT,
-                UNIQUE(name, role)
-            );
+        if not is_postgres_enabled():
+            connection.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    role TEXT NOT NULL CHECK (role IN ('admin', 'inspector', 'user')),
+                    password_hash TEXT NOT NULL,
+                    email TEXT,
+                    affiliation TEXT DEFAULT 'Public',
+                    must_change_password INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_seen_at TEXT,
+                    UNIQUE(name, role)
+                );
 
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_name_unique
-            ON users (LOWER(name));
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_users_name_unique
+                ON users (LOWER(name));
 
-            CREATE TABLE IF NOT EXISTS access_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                request_type TEXT NOT NULL DEFAULT 'admin_access',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                resolved_at TEXT,
-                resolved_by INTEGER,
-                FOREIGN KEY(user_id) REFERENCES users(id),
-                FOREIGN KEY(resolved_by) REFERENCES users(id)
-            );
+                CREATE TABLE IF NOT EXISTS access_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    request_type TEXT NOT NULL DEFAULT 'admin_access',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    resolved_at TEXT,
+                    resolved_by INTEGER,
+                    FOREIGN KEY(user_id) REFERENCES users(id),
+                    FOREIGN KEY(resolved_by) REFERENCES users(id)
+                );
 
 
-            CREATE TABLE IF NOT EXISTS projects (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                sector TEXT NOT NULL,
-                original_cost REAL NOT NULL,
-                revised_cost REAL NOT NULL,
-                expenditure REAL NOT NULL DEFAULT 0,
-                status TEXT NOT NULL,
-                risk_score REAL NOT NULL,
-                cost_overrun_prob REAL NOT NULL,
-                time_delay_prob REAL NOT NULL,
-                ministry TEXT,
-                agency TEXT,
-                location TEXT,
-                physical_progress REAL NOT NULL DEFAULT 0,
-                start_date TEXT,
-                expected_end_date TEXT,
-                approval_date TEXT,
-                revised_completion_date TEXT,
-                project_status TEXT DEFAULT 'Ongoing',
-                description TEXT NOT NULL DEFAULT '',
-                assigned_inspector TEXT DEFAULT 'Inspector Sharma',
-                assigned_inspector_id INTEGER,
-                assigned_officer_id INTEGER,
-                inspection_notes TEXT DEFAULT '',
-                last_inspected_at TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
+                CREATE TABLE IF NOT EXISTS projects (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    sector TEXT NOT NULL,
+                    original_cost REAL NOT NULL,
+                    revised_cost REAL NOT NULL,
+                    expenditure REAL NOT NULL DEFAULT 0,
+                    status TEXT NOT NULL,
+                    risk_score REAL NOT NULL,
+                    cost_overrun_prob REAL NOT NULL,
+                    time_delay_prob REAL NOT NULL,
+                    ministry TEXT,
+                    agency TEXT,
+                    location TEXT,
+                    physical_progress REAL NOT NULL DEFAULT 0,
+                    start_date TEXT,
+                    expected_end_date TEXT,
+                    approval_date TEXT,
+                    revised_completion_date TEXT,
+                    project_status TEXT DEFAULT 'Ongoing',
+                    description TEXT NOT NULL DEFAULT '',
+                    assigned_inspector TEXT DEFAULT 'Inspector Sharma',
+                    assigned_inspector_id INTEGER,
+                    assigned_officer_id INTEGER,
+                    inspection_notes TEXT DEFAULT '',
+                    last_inspected_at TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
 
-            CREATE TABLE IF NOT EXISTS notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                project_id TEXT,
-                message TEXT NOT NULL,
-                alert_type TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                read_at TEXT,
-                UNIQUE(user_id, project_id, alert_type),
-                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
-            );
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    project_id TEXT,
+                    message TEXT NOT NULL,
+                    alert_type TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    read_at TEXT,
+                    UNIQUE(user_id, project_id, alert_type),
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+                );
 
-            CREATE TABLE IF NOT EXISTS project_comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id TEXT NOT NULL,
-                comment TEXT NOT NULL,
-                image_filename TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
-            );
+                CREATE TABLE IF NOT EXISTS project_comments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id TEXT NOT NULL,
+                    comment TEXT NOT NULL,
+                    image_filename TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+                );
 
-            CREATE TABLE IF NOT EXISTS project_update_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                changed_fields TEXT NOT NULL DEFAULT '[]',
-                snapshot TEXT NOT NULL,
-                actor_id INTEGER,
-                actor_name TEXT NOT NULL,
-                actor_role TEXT NOT NULL,
-                recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
-                FOREIGN KEY(actor_id) REFERENCES users(id) ON DELETE SET NULL
-            );
+                CREATE TABLE IF NOT EXISTS project_update_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    changed_fields TEXT NOT NULL DEFAULT '[]',
+                    snapshot TEXT NOT NULL,
+                    actor_id INTEGER,
+                    actor_name TEXT NOT NULL,
+                    actor_role TEXT NOT NULL,
+                    recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY(actor_id) REFERENCES users(id) ON DELETE SET NULL
+                );
 
-            CREATE INDEX IF NOT EXISTS idx_project_history_project_time
-            ON project_update_history(project_id, recorded_at DESC, id DESC);
+                CREATE INDEX IF NOT EXISTS idx_project_history_project_time
+                ON project_update_history(project_id, recorded_at DESC, id DESC);
 
-            CREATE TABLE IF NOT EXISTS deleted_project_backups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id TEXT NOT NULL,
-                project_name TEXT NOT NULL,
-                snapshot TEXT NOT NULL,
-                deleted_at TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                deleted_by INTEGER NOT NULL,
-                deleted_by_name TEXT NOT NULL
-            );
+                CREATE TABLE IF NOT EXISTS deleted_project_backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id TEXT NOT NULL,
+                    project_name TEXT NOT NULL,
+                    snapshot TEXT NOT NULL,
+                    deleted_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    deleted_by INTEGER NOT NULL,
+                    deleted_by_name TEXT NOT NULL
+                );
 
-            CREATE INDEX IF NOT EXISTS idx_deleted_project_backups_expiry
-            ON deleted_project_backups(expires_at);
-            """
-        )
+                CREATE INDEX IF NOT EXISTS idx_deleted_project_backups_expiry
+                ON deleted_project_backups(expires_at);
+                """
+            )
 
         existing_projects = connection.execute(
             """
