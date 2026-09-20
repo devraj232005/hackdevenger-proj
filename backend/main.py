@@ -113,11 +113,13 @@ class PostgresConnection:
 def is_postgres_enabled():
     return bool(DATABASE_URL)
 
-if os.getenv("RENDER") and not os.getenv("MOSPI_DATABASE_PATH"):
+if os.getenv("RENDER") and not is_postgres_enabled() and not os.getenv("MOSPI_DATABASE_PATH"):
     logging.warning(
-        "Render detected without MOSPI_DATABASE_PATH. The app is using a local SQLite file, which is not persistent across deploys/restarts. "
-        "Set MOSPI_DATABASE_PATH=/data/paimana.db or migrate to a managed Postgres database for production."
+        "Render detected without DATABASE_URL or MOSPI_DATABASE_PATH. The app is using a local SQLite file, which is not persistent across deploys/restarts. "
+        "Set DATABASE_URL for Postgres or set MOSPI_DATABASE_PATH to a writable path such as /tmp/paimana.db."
     )
+elif is_postgres_enabled():
+    logging.info("Using PostgreSQL database configured via DATABASE_URL")
 else:
     logging.info("Using database path: %s", DATABASE_PATH)
 
