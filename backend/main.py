@@ -91,6 +91,15 @@ class PostgresConnection:
         cursor.execute(normalized_query, params)
         return PostgresQueryResult(cursor)
 
+    def executescript(self, script: str):
+        statements = [statement.strip() for statement in script.split(";") if statement.strip()]
+        cursor = self.connection.cursor()
+        try:
+            for statement in statements:
+                cursor.execute(statement)
+        finally:
+            cursor.close()
+
     def commit(self):
         self.connection.commit()
 
