@@ -1477,52 +1477,53 @@ def initialize_database() -> None:
                 )
             connection.commit()
 
-        # Migration for affiliation column
-        try:
-            connection.execute("ALTER TABLE users ADD COLUMN affiliation TEXT DEFAULT 'Public'")
-            connection.commit()
-            logging.info("Migration: added affiliation column to users")
-        except Exception:
-            pass
+        if not is_postgres_enabled():
+            # Migration for affiliation column
+            try:
+                connection.execute("ALTER TABLE users ADD COLUMN affiliation TEXT DEFAULT 'Public'")
+                connection.commit()
+                logging.info("Migration: added affiliation column to users")
+            except Exception:
+                pass
 
-        # Existing databases may still have the original role constraint.
-        users_schema = connection.execute(
-            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
-        ).fetchone()
-        if users_schema and "'inspector'" not in (users_schema[0] or '').lower():
-            connection.execute("PRAGMA foreign_keys=off;")
-            connection.execute(
-                """
-                CREATE TABLE users_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK (role IN ('admin', 'inspector', 'user')),
-                    password_hash TEXT NOT NULL,
-                    email TEXT,
-                    affiliation TEXT DEFAULT 'Public',
-                    must_change_password INTEGER NOT NULL DEFAULT 0,
-                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    last_seen_at TEXT,
-                    UNIQUE(name, role)
-                );
-                """
-            )
-            user_columns = {
-                row[1] for row in connection.execute("PRAGMA table_info(users)").fetchall()
-            }
-            last_seen_expression = "last_seen_at" if "last_seen_at" in user_columns else "NULL"
-            affiliation_expression = "affiliation" if "affiliation" in user_columns else "'Public'"
-            connection.execute(
-                f"""
-                INSERT INTO users_new (id, name, role, password_hash, email, affiliation, must_change_password, created_at, last_seen_at)
-                SELECT id, name, role, password_hash, NULL, {affiliation_expression}, 0, created_at, {last_seen_expression}
-                FROM users;
-                """
-            )
-            connection.execute("DROP TABLE users;")
-            connection.execute("ALTER TABLE users_new RENAME TO users;")
-            connection.execute("PRAGMA foreign_keys=on;")
-            connection.commit()
+            # Existing databases may still have the original role constraint.
+            users_schema = connection.execute(
+                "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+            ).fetchone()
+            if users_schema and "'inspector'" not in (users_schema[0] or '').lower():
+                connection.execute("PRAGMA foreign_keys=off;")
+                connection.execute(
+                    """
+                    CREATE TABLE users_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        role TEXT NOT NULL CHECK (role IN ('admin', 'inspector', 'user')),
+                        password_hash TEXT NOT NULL,
+                        email TEXT,
+                        affiliation TEXT DEFAULT 'Public',
+                        must_change_password INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        last_seen_at TEXT,
+                        UNIQUE(name, role)
+                    );
+                    """
+                )
+                user_columns = {
+                    row[1] for row in connection.execute("PRAGMA table_info(users)").fetchall()
+                }
+                last_seen_expression = "last_seen_at" if "last_seen_at" in user_columns else "NULL"
+                affiliation_expression = "affiliation" if "affiliation" in user_columns else "'Public'"
+                connection.execute(
+                    f"""
+                    INSERT INTO users_new (id, name, role, password_hash, email, affiliation, must_change_password, created_at, last_seen_at)
+                    SELECT id, name, role, password_hash, NULL, {affiliation_expression}, 0, created_at, {last_seen_expression}
+                    FROM users;
+                    """
+                )
+                connection.execute("DROP TABLE users;")
+                connection.execute("ALTER TABLE users_new RENAME TO users;")
+                connection.execute("PRAGMA foreign_keys=on;")
+                connection.commit()
 
         connection.executescript(
             """
