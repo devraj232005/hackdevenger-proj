@@ -1,8 +1,6 @@
 [![Watch the demo video](https://www.youtube.com/watch?v=wMSu_B2HV_8)](https://www.youtube.com/watch?v=wMSu_B2HV_8)
 
-<a href="https://youtube.com" target="_blank">
-  <img src="https://youtube.com" alt="Watch the video" width="600" height="auto" />
-</a>
+
 
 # PAIMANA Infrastructure Intelligence
 
