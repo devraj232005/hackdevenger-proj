@@ -1,3 +1,5 @@
+[![Watch the video](https://www.youtube.com/watch?v=wMSu_B2HV_8)]
+
 # PAIMANA Infrastructure Intelligence
 
 PAIMANA is a public infrastructure monitoring and predictive risk analytics platform. It combines a React frontend, FastAPI backend, SQLite persistence, machine-learning risk scoring, early-warning alerts, project history, role-based access, and the LogicCore AI project assistant.
@@ -5,6 +7,8 @@ PAIMANA is a public infrastructure monitoring and predictive risk analytics plat
 ## Features
 
 ### Dashboard
+
+
 
 - Portfolio overview with total projects, original cost, revised cost, expenditure, high-risk projects, and critical alerts.
 - Risk distribution and project progress visualizations.
