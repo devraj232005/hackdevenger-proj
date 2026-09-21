@@ -1,4 +1,5 @@
-[![Watch the video](https://www.youtube.com/watch?v=wMSu_B2HV_8)]
+[![Watch the video](https://www.youtube.com/watch?v=Duo7zjU5NwA)](https://www.youtube.com/watch?v=Duo7zjU5NwA)
+
 
 # PAIMANA Infrastructure Intelligence
 
