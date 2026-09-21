@@ -1,6 +1,6 @@
 [![Watch the demo video](https://www.youtube.com/watch?v=wMSu_B2HV_8)](https://www.youtube.com/watch?v=wMSu_B2HV_8)
 
-
+**It may take sometime to bootup website since backend is on render so please wait 1-2 minutes.**
 
 # PAIMANA Infrastructure Intelligence
 
